@@ -18,7 +18,18 @@ export const signup = async (req, res) => {
   const token = jwt.sign({ _id: newUser._id }, process.env.JWT_SECRET)
   return res
     .cookie(token, { httpsOnly: true, maxAge: 15 * 60 * 60 * 1000 })
-    .json({ success: true, message: "User created Successfully !" })
+    .json({ success: true, message: "User created successfully !" })
 }
 
-export const signin = (req, res) => {}
+export const signin = async (req, res) => {
+  const { email, password } = req.body
+  const validUser = await USER.findOne({ email })
+  if (!validUser) return res.json({ success: false, message: "User not found" })
+  const validPassword = bcryptjs.compareSync(password, validUser.password)
+  if (!validPassword)
+    return res.status(401).json({ success: false, message: "Invalid Password" })
+
+  return res
+    .status(201)
+    .json({ success: true, message: `welcome ,${validUser.username}` })
+}
