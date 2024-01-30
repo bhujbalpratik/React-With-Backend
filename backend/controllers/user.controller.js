@@ -1,13 +1,15 @@
 import bcryptjs from "bcryptjs"
 import { USER } from "../models/user.models.js"
-import jwt from "jsonwebtoken"
+import { sendCookie } from "../utils/features.js"
 
 export const signup = async (req, res) => {
   const { username, email, password } = req.body
 
-  const user = await USER.findOne({ email })
+  const user = await USER.find({ email, username })
   if (user) {
-    return res.json({ success: false, message: "User Already Exist" })
+    return res
+      .status(404)
+      .json({ success: false, message: "User Already Exist" })
   }
   const hashedPassword = bcryptjs.hashSync(password, 10)
   const newUser = await USER.create({
@@ -15,21 +17,20 @@ export const signup = async (req, res) => {
     email,
     password: hashedPassword,
   })
-  const token = jwt.sign({ _id: newUser._id }, process.env.JWT_SECRET)
-  return res
-    .cookie(token, { httpsOnly: true, maxAge: 15 * 60 * 60 * 1000 })
-    .json({ success: true, message: "User created successfully !" })
+
+  sendCookie(newUser, res, 201, "User created successfully")
 }
 
 export const signin = async (req, res) => {
   const { email, password } = req.body
   const validUser = await USER.findOne({ email })
-  if (!validUser) return res.json({ success: false, message: "User not found" })
+
+  if (!validUser)
+    return res.status(401).json({ success: false, message: "User not found" })
+
   const validPassword = bcryptjs.compareSync(password, validUser.password)
   if (!validPassword)
     return res.status(401).json({ success: false, message: "Invalid Password" })
 
-  return res
-    .status(201)
-    .json({ success: true, message: `welcome ,${validUser.username}` })
+  sendCookie(validUser, res, 200, `welcome ,${validUser.username}`)
 }
