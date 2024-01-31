@@ -5,11 +5,13 @@ import { sendCookie } from "../utils/features.js"
 export const signup = async (req, res) => {
   const { username, email, password } = req.body
 
-  const user = await USER.find({ email, username })
-  if (user) {
-    return res
-      .status(404)
-      .json({ success: false, message: "User Already Exist" })
+  const userEmail = await USER.findOne({ email })
+  const userName = await USER.findOne({ username })
+  if (userEmail || userName) {
+    return res.status(400).json({
+      success: false,
+      message: `${userName ? "username already taken" : "user already exist"}`,
+    })
   }
   const hashedPassword = bcryptjs.hashSync(password, 10)
   const newUser = await USER.create({
@@ -33,4 +35,15 @@ export const signin = async (req, res) => {
     return res.status(401).json({ success: false, message: "Invalid Password" })
 
   sendCookie(validUser, res, 200, `welcome ,${validUser.username}`)
+}
+
+export const myProfile = (req, res) => {
+  res.status(200).json({ success: true, user: req.user })
+}
+
+export const signout = (req, res) => {
+  res
+    .status(200)
+    .cookie("token", "", { expires: new Date(Date.now()) })
+    .json({ success: true, message: "User sign-out successfully" })
 }
