@@ -1,40 +1,47 @@
 import bcryptjs from "bcryptjs"
 import { USER } from "../models/user.models.js"
 import { sendCookie } from "../utils/features.js"
+import { errorHandler } from "../utils/error.js"
 
-export const signup = async (req, res) => {
-  const { username, email, password } = req.body
+export const signup = async (req, res, next) => {
+  try {
+    const { username, email, password } = req.body
 
-  const userEmail = await USER.findOne({ email })
-  const userName = await USER.findOne({ username })
-  if (userEmail || userName) {
-    return res.status(400).json({
-      success: false,
-      message: `${userName ? "username already taken" : "user already exist"}`,
+    const userEmail = await USER.findOne({ email })
+    const userName = await USER.findOne({ username })
+    if (userEmail || userName)
+      return next(
+        errorHandler(
+          400,
+          `${userName ? "username already taken" : "user already exist"}`
+        )
+      )
+
+    const hashedPassword = bcryptjs.hashSync(password, 10)
+    const newUser = await USER.create({
+      username,
+      email,
+      password: hashedPassword,
     })
-  }
-  const hashedPassword = bcryptjs.hashSync(password, 10)
-  const newUser = await USER.create({
-    username,
-    email,
-    password: hashedPassword,
-  })
 
-  sendCookie(newUser, res, 201, "User created successfully")
+    sendCookie(newUser, res, 201, "User created successfully")
+  } catch (error) {
+    next(error)
+  }
 }
 
-export const signin = async (req, res) => {
-  const { email, password } = req.body
-  const validUser = await USER.findOne({ email })
+export const signin = async (req, res, next) => {
+  try {
+    const { email, password } = req.body
+    const validUser = await USER.findOne({ email })
+    if (!validUser) return next(errorHandler(400, "User not found"))
 
-  if (!validUser)
-    return res.status(401).json({ success: false, message: "User not found" })
-
-  const validPassword = bcryptjs.compareSync(password, validUser.password)
-  if (!validPassword)
-    return res.status(401).json({ success: false, message: "Invalid Password" })
-
-  sendCookie(validUser, res, 200, `welcome ,${validUser.username}`)
+    const validPassword = bcryptjs.compareSync(password, validUser.password)
+    if (!validPassword) return next(errorHandler(404, "Invalid Password"))
+    sendCookie(validUser, res, 200, `welcome ,${validUser.username}`)
+  } catch (error) {
+    next(error)
+  }
 }
 
 export const myProfile = (req, res) => {
