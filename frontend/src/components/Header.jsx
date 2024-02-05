@@ -1,27 +1,36 @@
-import React from "react"
+import React, { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext.js"
+import toast from "react-hot-toast"
+import axios from "axios"
 
 const Header = () => {
   const { isAuthenticated, setIsAuthenticated } = useAuth()
-  const navigate = useNavigate()
-  const logOutHandler = async (e) => {
+
+  const [loading, setLoading] = useState(false)
+
+  const signoutOutHandler = async () => {
     try {
+      setLoading(true)
       const { data } = await axios.get("/api/user/signout")
       console.log(data)
       if (data) {
-        toast.success(data.message, {
-          duration: 4000,
-          icon: "😎",
-          style: {
-            borderRadius: "10px",
-            background: "#333",
-            color: "#fff",
-          },
-        })
-        setIsAuthenticated(true)
+        if (data.message) {
+          toast.success(data.message, {
+            duration: 4000,
+            style: {
+              borderRadius: "10px",
+              background: "#333",
+              color: "#fff",
+            },
+          })
+        }
+
+        setIsAuthenticated(false)
+        setLoading(false)
       }
     } catch (error) {
+      setLoading(false)
       toast.error(error.response.data.message, {
         duration: 4000,
         style: {
@@ -30,7 +39,8 @@ const Header = () => {
           color: "#fff",
         },
       })
-      setError(true)
+      setIsAuthenticated(true)
+      console.log(error)
     }
   }
   return (
@@ -62,14 +72,25 @@ const Header = () => {
           </div>
 
           <div className="block">
-            <Link to={"/signin"}>
+            {isAuthenticated ? (
               <button
                 type="button"
-                className="rounded-md bg-[#172842] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                disabled={loading}
+                className="rounded-md bg-[#172842] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black cursor-pointer opacity-85"
+                onClick={signoutOutHandler}
               >
-                {isAuthenticated ? "Sign Out" : "Sign In"}
+                Sign Out
               </button>
-            </Link>
+            ) : (
+              <Link to={"/signin"}>
+                <button
+                  type="button"
+                  className="rounded-md bg-[#172842] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                >
+                  Sign In
+                </button>
+              </Link>
+            )}
           </div>
         </div>
       </div>

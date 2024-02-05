@@ -1,6 +1,6 @@
 import axios from "axios"
 import { useState } from "react"
-import { Link, json, useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext.js"
 import toast from "react-hot-toast"
 
@@ -8,8 +8,6 @@ const Signin = () => {
   const [formData, setFormData] = useState({})
 
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
-  const [errorMsg, setErrorMsg] = useState("")
   const navigate = useNavigate()
   const { isAuthenticated, setIsAuthenticated } = useAuth()
 
@@ -21,7 +19,7 @@ const Signin = () => {
     e.preventDefault()
     try {
       setLoading(true)
-      setError(false)
+
       const { data } = await axios.post("/api/user/signin", formData)
       console.log(data)
       if (data) {
@@ -39,7 +37,6 @@ const Signin = () => {
       }
     } catch (error) {
       setLoading(false)
-      setErrorMsg(error.response.data.message)
       toast.error(error.response.data.message, {
         duration: 4000,
         style: {
@@ -48,7 +45,6 @@ const Signin = () => {
           color: "#fff",
         },
       })
-      setError(true)
     }
   }
   if (isAuthenticated) navigate("/")
@@ -88,9 +84,6 @@ const Signin = () => {
           <span className="text-blue-500">Sign up&gt;</span>
         </Link>
       </div>
-      <p className="text-red-600">
-        {error ? <p className="text-red-600 mt-2">{errorMsg}</p> : null}
-      </p>
     </div>
   )
 }

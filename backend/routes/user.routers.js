@@ -11,7 +11,7 @@ const router = express.Router()
 
 router.post("/signup", signup)
 router.post("/signin", signin)
-router.get("/signout", isAuthenticated, signout)
+router.get("/signout", signout)
 router.get("/profile", isAuthenticated, myProfile)
 
 export default router
